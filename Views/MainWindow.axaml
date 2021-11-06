@@ -1,0 +1,132 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PicToMap.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="640"
+		Width="1200"
+		MinWidth="1200"
+		Height="640"
+		MinHeight="640"
+        x:Class="PicToMap.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="PicToMap">
+
+	<Window.Styles>
+		<Style Selector="Border.Box">
+			<Setter Property="BorderBrush" Value="White"/>
+			<Setter Property="BorderThickness" Value="2"/>
+			<Setter Property="CornerRadius" Value="10"/>
+			<Setter Property="Padding" Value="6"/>
+		</Style>
+		<Style Selector="NumericUpDown">
+			<Setter	Property="Margin" Value="0,1"/>
+			<Setter	Property="VerticalContentAlignment" Value="Center"/>
+		</Style>
+		<Style Selector="Label.BoxTitle">
+			<Setter	Property="FontSize" Value="20"/>
+			<Setter	Property="FontWeight" Value="Bold"/>
+		</Style>
+		<Style Selector="Label.CenteredContent">
+			<Setter	Property="VerticalContentAlignment" Value="Center"/>
+			<Setter	Property="HorizontalContentAlignment" Value="Center"/>
+		</Style>
+		<Style Selector="Button">
+			<Setter	Property="HorizontalAlignment" Value="Stretch"/>
+			<Setter	Property="HorizontalContentAlignment" Value="Center"/>
+			<Setter	Property="Margin" Value="0,5,0,0"/>
+		</Style>
+	</Window.Styles>
+	
+	<Border	Background="#202020"
+			Padding="5">
+		<DockPanel>
+			<DockPanel DockPanel.Dock="Left">
+				<StackPanel DockPanel.Dock="Bottom">
+					<Button>Settings</Button>
+					<Button Click="OnButtonClick_Browse">Browse</Button>
+					<Button Click="OnButtonClick_Generate">Generate</Button>
+				</StackPanel>
+				<StackPanel Width="300">
+					<Border Classes="Box">
+						<StackPanel>
+							<Label Classes="BoxTitle" Content="Coordinates"/>
+							<Border BorderThickness="1"
+									BorderBrush="White"
+									Margin="0,0,0,6"/>
+							<Grid ColumnDefinitions="20,*" RowDefinitions="40,40,40">
+								<Label Classes="CenteredContent" 
+									   Content="X"/>
+								<Label Classes="CenteredContent" 
+									   Content="Y"
+									   Grid.Row="1"/>
+								<Label Classes="CenteredContent" 
+									   Content="Z"
+									   Grid.Row="2"/>
+								<NumericUpDown Grid.Column="1"
+											   Value="{Binding Settings.X}"/>
+								<NumericUpDown Grid.Column="1"
+											   Grid.Row="1"
+											   Value="{Binding Settings.Y}"/>
+								<NumericUpDown Grid.Column="1"
+											   Grid.Row="2"
+											   Value="{Binding Settings.Z}"/>
+							</Grid>
+						</StackPanel>
+					</Border>
+					<Border Classes="Box"
+							Margin="0,5,0,0">
+						<StackPanel>
+							<Label Classes="BoxTitle" 
+								   Content="Size (in maps)"/>
+							<Border BorderThickness="1"
+									BorderBrush="White"
+									Margin="0,0,0,6"/>
+							<Grid ColumnDefinitions="64,*" RowDefinitions="40,40">
+								<Label Content="Width ="
+									   Classes="CenteredContent"/>
+								<Label Content="Height ="
+									   Classes="CenteredContent"
+									   Grid.Row="1"/>
+								<NumericUpDown Grid.Column="1"
+											   Value="{Binding Settings.WidthInMaps}"/>
+								<NumericUpDown Grid.Column="1"
+											   Grid.Row="1"
+											   Value="{Binding Settings.HeightInMaps}"/>
+							</Grid>
+						</StackPanel>
+					</Border>
+					<Border Classes="Box"
+							Margin="0,5,0,0">
+						<StackPanel>
+							<Label Classes="BoxTitle"
+								   Content="Qualtity settings"/>
+							<Border BorderThickness="1"
+									BorderBrush="White"
+									Margin="0,0,0,6"/>
+							<Label Content="Building Method:"/>
+							<StackPanel Spacing="10" Orientation="Horizontal">
+								<RadioButton Content="Staircase"
+											 IsChecked="{Binding Settings.StaircaseSelected}"/>
+								<RadioButton Content="Flat"/>
+								
+							</StackPanel>
+							<Label Content="Resize Method:"/>
+							<StackPanel Spacing="10" Orientation="Horizontal">
+								<RadioButton Content="High quality"
+										 IsChecked="{Binding Settings.HighQualitySelected}"/>
+								<RadioButton Content="Nearest Neightbour"/>
+							</StackPanel>
+							<CheckBox Content="Dithering"
+									  IsChecked="{Binding Settings.DitheringChecked}"/>
+						</StackPanel>
+					</Border>
+				</StackPanel>
+			</DockPanel>
+			<Border	Background="#323232"
+					Margin="5,0,0,0">
+				<Image Name="Display"/>
+			</Border>
+		</DockPanel>
+	</Border>
+</Window>
