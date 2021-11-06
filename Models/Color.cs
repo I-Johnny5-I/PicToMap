@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PicToMap.Models.Structures
+namespace PicToMap.Models
 {
     public struct Color
 	{
