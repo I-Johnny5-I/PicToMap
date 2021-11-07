@@ -14,7 +14,7 @@ namespace PicToMap.Views
             InitializeComponent();
 #if DEBUG
             this.AttachDevTools();
-#endif
+#endif  
         }
 
         private void InitializeComponent()
@@ -26,20 +26,30 @@ namespace PicToMap.Views
         {
             var dialog = new OpenFileDialog
             {
-                Title = "Select an image"
+                Title = "Choose an image"
             };
             var dialogResult = await dialog.ShowAsync(this);
             if (dialogResult == null) return;
-            if (DataContext is MainWindowViewModel viewModel)
-            {
-                var settings = viewModel.Settings;
-                settings.ImagePath = dialogResult[0];
-            }                
+            if (DataContext is not MainWindowViewModel viewModel) return;
+            viewModel._settings.ImagePath = dialogResult[0];              
             this.Get<Image>("Display").Source = new Avalonia.Media.Imaging.Bitmap(dialogResult[0]);
         }
-        private void OnButtonClick_Generate(object sender, RoutedEventArgs args)
+        async private void Generate_Click(object sender, RoutedEventArgs args)
         {
-            
+            if (DataContext is not MainWindowViewModel viewModel) return;
+            if (viewModel._settings.ImagePath == null) return;
+            var dialog = new OpenFolderDialog
+            {
+                Title = "Choose the destination folder (datapack will end up here)"
+            };
+            var dialogResult = await dialog.ShowAsync(this);
+            if (dialogResult != null)
+            {
+                viewModel._settings.DestinationDirectory = dialogResult;
+                viewModel._settings.Name = this.Get<TextBox>("NameBox").Text;
+                var worker = viewModel.BackgroundWorker;
+                worker.RunWorkerAsync();
+            }
         }
     }
 }

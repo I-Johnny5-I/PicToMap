@@ -48,9 +48,9 @@ namespace PicToMap.Models
 				left._b * right);
 		}
 
-		public static float Distance(Color a, Color b)
+		public static double Distance(Color a, Color b)
 		{
-			return (float)Math.Sqrt(
+			return Math.Sqrt(
 				(a._r - b._r) * (a._r - b._r) +
 				(a._g - b._g) * (a._g - b._g) +
 				(a._b - b._b) * (a._b - b._b));

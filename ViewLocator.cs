@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using PicToMap.ViewModels;
 using System;
+using ReactiveUI;
 
 namespace PicToMap
 {
@@ -24,7 +25,7 @@ namespace PicToMap
 
         public bool Match(object data)
         {
-            return data is ViewModelBase;
+            return data is ReactiveObject;
         }
     }
 }

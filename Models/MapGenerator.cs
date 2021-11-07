@@ -17,11 +17,12 @@ namespace PicToMap.Models
 		private string[] Blocks { get; set; }
 		private Color[] Colors { get; }
 		private int[] Blueprint { get; }
-		private int[] Heights { }
+		private int[]? Heights { get; set; }
 		public MapGenerator(Settings settings)
 		{
 			Settings = settings;
 			(Pixels, Width, Height) = ReadImage(Settings.ImagePath);
+			Height++;
 			var (blocks, colorsAsStrings) = ReadJson();
 			Blocks = blocks;
 			Colors = ParseColors(colorsAsStrings);
@@ -35,12 +36,23 @@ namespace PicToMap.Models
 			if (jsonDictionary == null) throw new FormatException();
 			var keys = new string[jsonDictionary.Count];
 			jsonDictionary.Keys.CopyTo(keys, 0);
-			string[] values;		
-			values = new string[jsonDictionary.Count];
-			for (var i = 0; i < values.Length; i++)
-			{
-				values[i] = jsonDictionary[keys[i]][0];
-			}		
+			string[] values;
+			if (Settings.StaircaseSelected)
+            {
+				values = new string[keys.Length * 3];
+				for (var i = 0; i < keys.Length; i++)
+                {
+					jsonDictionary[keys[i]].CopyTo(values, i * 3);
+                }
+            }
+            else
+            {
+				values = new string[keys.Length];
+				for (var i = 0; i < values.Length; i++)
+				{
+					values[i] = jsonDictionary[keys[i]][0];
+				}
+			}
 			return (keys, values);
 		}
 		private static Color[] ParseColors(string[] colorsAsStrings)
@@ -73,15 +85,6 @@ namespace PicToMap.Models
 			}
 			return ((int)Math.Round((double)boundariesHeight * sourceWidth / sourceHeight), boundariesHeight);
 		}
-		private static Color[] ParseMapColors(string[] colors)
-		{
-			var result = new Structures.Color[colors.Length];
-			for (var i = 0; i < colors.Length; i++)
-			{
-				result[i] = Structures.Color.Parse(colors[i]);
-			}
-			return result;
-		}
 
 		private void MakeBlueprint()
 		{
@@ -90,36 +93,31 @@ namespace PicToMap.Models
             {
 				var blocks = new string[Blocks.Length + 1];
 				Blocks.CopyTo(blocks, 0);
-				blocks[^0] = "cobblestone"; 
+				blocks[^1] = "cobblestone"; 
 				Blocks = blocks;
-				cobblestone = Blocks.Length - 1;
+				cobblestone = (Blocks.Length - 1) * 3;
             }
 			for (var i = 0; i < Width; i++)
 			{
 				Blueprint[i] = cobblestone;
 			}
-			for (var i = Width; i < Blueprint.Length; i++)
+			for (var i = 0; i < Pixels.Length; i++)
 			{
-				if (Pixels[i - Width].IsTranslucent)
+				if (Pixels[i].IsTranslucent)
 				{
-					Blueprint[i] = -1;
+					Blueprint[i + Width] = -1;
 					continue;
 				}
 				if (Settings.DitheringChecked)
 				{
-					Pixels[i - Width].Fix();
+					Pixels[i].Fix();
 				}
 				var colorIndex = GetClosestColorIndex(Pixels[i]);
-				Blueprint[i] = colorIndex;
+				Blueprint[i + Width] = colorIndex;
 				if (!Settings.DitheringChecked) continue;
 				DistributeError(i, Pixels[i] - Colors[colorIndex]);
 			}
 		}
-		private void CalculateHeights()
-        {
-
-        }
-
 		private void DistributeError(int index, Color error)
         {
 			var right = (index + 1) % Width != 0;
@@ -143,6 +141,44 @@ namespace PicToMap.Models
 				Pixels[index].Add(error * 0.0625f);
 			}
 		}
+		private void CalculateHeights()
+        {
+			Heights = new int[Blueprint.Length];
+			for (var i = 0; i < Width; i++)
+            {
+				Heights[i] = 0;
+            }
+			for (var i = Width; i < Heights.Length; i++)
+            {
+				var height = 0;
+				switch (Blueprint[i] % 3)
+                {
+					case 1:
+						height++;
+						break;
+					case 2:
+						height--;
+						break;
+                }
+				Heights[i] = Heights[i - Width] + height;
+            }
+			for (var x = 0; x < Width; x++)
+            {
+				var minHeight = int.MaxValue;
+				for (var y = x; y < Heights.Length; y += Width)
+                {
+					if (Heights[y] < minHeight)
+                    {
+						minHeight = Heights[y];
+                    }
+                }
+				for (var y = x; y < Heights.Length; y += Width)
+				{
+					Heights[y] -= minHeight;
+				}
+			}
+        }
+
 		private void WriteDatapack()
 		{
 			var tempPath = Path.Combine(Settings.CurrentDirectory, "temp");
@@ -150,49 +186,49 @@ namespace PicToMap.Models
 			{
 				Directory.Delete(tempPath, true);
 			}
-
-			var currentX = Settings.X + datapackX * 1024;
-			var currentZ = Settings.Z + datapackZ * 1024;
-
-			var functionsPath = Path.Combine(tempPath, "data", "block_art", "functions");
+			var functionsPath = Path.Combine(tempPath, "data", "pic_to_map", "functions");
 			if (!Directory.Exists(functionsPath)) Directory.CreateDirectory(functionsPath);
 			File.WriteAllText(Path.Combine(tempPath, "pack.mcmeta"),
 				"{\"pack\":{\"pack_format\": 7,\"description\": \"\"}}");
 
 			var commands = new List<string>();
-			File.WriteAllText(Path.Combine(functionsPath, "teleport.mcfunction"),
-				$"tp @s {currentX} {Offset.Y + 1} {currentZ}");
 
 			// forceload command has limits, which is why we will need multiple commands to forceload big areas
 			var removeForceloadCommands = new List<string>();
-			for (var fz = 0; fz < 1024; fz += 128)
-				for (var fx = 0; fx < 1024; fx += 128)
+			for (var fz = Settings.Z; fz < Settings.HeightInMaps * 128 + Settings.Z; fz += 128)
+				for (var fx = Settings.X; fx < Settings.WidthInMaps * 128 + Settings.X; fx += 128)
 				{
 					var command =
-						$"forceload add {fx + currentX} {fz + currentZ} {fx + 127 + currentX} {fz + 127 + currentZ}";
+						$"forceload add {fx} {fz} {fx + 127} {fz + 127}";
 					commands.Add(command);
 					removeForceloadCommands.Add(command.Replace("add", "remove"));
 				}
 
 			File.WriteAllLines(Path.Combine(functionsPath, "forceload_add.mcfunction"), commands);
 			File.WriteAllLines(Path.Combine(functionsPath, "forceload_remove.mcfunction"), removeForceloadCommands);
-			removeForceloadCommands.Clear();
 
 			commands.Clear();
-			var upperBoundX = datapackX * 1024 + 1024;
-			var upperBoundZ = datapackZ * 1024 + 1024;
-			for (var blockZ = datapackZ * 1024; blockZ < upperBoundZ && blockZ < Height; blockZ++)
+			removeForceloadCommands.Clear();
+
+			for (var blockZ = 0; blockZ < Height; blockZ++)
 			{
-				for (int blockX = datapackX * 1024; blockX < upperBoundX && blockX < Width; blockX++)
+				for (int blockX = 0; blockX < Width; blockX++)
 				{
 					var index = Index(blockX, blockZ, Width);
-					commands.Add($"setblock {Offset.X + blockX} {Offset.Y} {Offset.Z + blockZ} {Ids[Blueprint[index]]}");
+					if (Settings.StaircaseSelected && Heights != null)
+					{
+						commands.Add($"setblock {Settings.X + blockX} {Heights[index] + Settings.Y} {Settings.Z + blockZ - 1} {Blocks[Blueprint[index] / 3]}");
+					}
+					else
+                    {
+						commands.Add($"setblock {Settings.X + blockX} {Settings.Y} {Settings.Z + blockZ - 1} {Blocks[Blueprint[index]]}");
+					}
 				}
 			}
 			File.WriteAllLines(Path.Combine(functionsPath, "draw.mcfunction"), commands);
 			commands.Clear();
 
-			var zipFile = Path.Combine(DestinationFolder, $"part_{count}.zip");
+			var zipFile = Path.Combine(Settings.DestinationDirectory, $"{Settings.Name}.zip");
 			if (File.Exists(zipFile)) File.Delete(zipFile);
 			ZipFile.CreateFromDirectory(tempPath, zipFile);
 			Directory.Delete(tempPath, true);
@@ -201,12 +237,16 @@ namespace PicToMap.Models
         public void Generate()
         {
 			MakeBlueprint();
+			if (Settings.StaircaseSelected)
+            {
+				CalculateHeights();
+            }
 			WriteDatapack();
         }
 		private int GetClosestColorIndex(Color color)
 		{
 			var result = -1;
-			var minDistance = float.MaxValue;
+			var minDistance = double.MaxValue;
 			for (int i = 0; i < Colors.Length; i++)
 			{
 				var currentDistance = Color.Distance(color, Colors[i]);

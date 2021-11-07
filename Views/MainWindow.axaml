@@ -3,11 +3,11 @@
         xmlns:vm="using:PicToMap.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="640"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
 		Width="1200"
 		MinWidth="1200"
-		Height="640"
-		MinHeight="640"
+		Height="700"
+		MinHeight="700"
         x:Class="PicToMap.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="PicToMap">
@@ -34,7 +34,6 @@
 		<Style Selector="Button">
 			<Setter	Property="HorizontalAlignment" Value="Stretch"/>
 			<Setter	Property="HorizontalContentAlignment" Value="Center"/>
-			<Setter	Property="Margin" Value="0,5,0,0"/>
 		</Style>
 	</Window.Styles>
 	
@@ -42,10 +41,23 @@
 			Padding="5">
 		<DockPanel>
 			<DockPanel DockPanel.Dock="Left">
-				<StackPanel DockPanel.Dock="Bottom">
+				<StackPanel DockPanel.Dock="Bottom"
+							Spacing="5">
 					<Button>Settings</Button>
 					<Button Click="OnButtonClick_Browse">Browse</Button>
-					<Button Click="OnButtonClick_Generate">Generate</Button>
+					<Button Click="Generate_Click">Generate</Button>
+					<Grid ColumnDefinitions="*,2*">
+						<Label Classes="CenteredContent" Content="Datapack Name:"/>
+						<TextBox Grid.Column="1" 
+								 HorizontalAlignment="Stretch"
+								 Text="map"
+								 Name="NameBox"/>						
+					</Grid>
+					<StackPanel Orientation="Horizontal">
+						<Label Content="Status:"/>
+						<Label Content="{Binding Status}"
+							   Foreground="{Binding StatusForeground}"/>
+					</StackPanel>
 				</StackPanel>
 				<StackPanel Width="300">
 					<Border Classes="Box">
@@ -54,7 +66,7 @@
 							<Border BorderThickness="1"
 									BorderBrush="White"
 									Margin="0,0,0,6"/>
-							<Grid ColumnDefinitions="20,*" RowDefinitions="40,40,40">
+							<Grid ColumnDefinitions="20,*" RowDefinitions="*,*,*">
 								<Label Classes="CenteredContent" 
 									   Content="X"/>
 								<Label Classes="CenteredContent" 
