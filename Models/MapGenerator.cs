@@ -10,13 +10,14 @@ namespace PicToMap.Models
 {
 	public class MapGenerator
 	{
-		protected Settings Settings { get; }
-		protected Color[] Pixels { get; }
-		protected int Width { get; }
-		protected int Height { get; }
-		protected string[] Blocks { get; }
-		protected Color[] Colors { get; }
-		protected int[] Blueprint { get; }
+		private Settings Settings { get; }
+		private Color[] Pixels { get; }
+		private int Width { get; }
+		private int Height { get; }
+		private string[] Blocks { get; set; }
+		private Color[] Colors { get; }
+		private int[] Blueprint { get; }
+		private int[] Heights { }
 		public MapGenerator(Settings settings)
 		{
 			Settings = settings;
@@ -27,7 +28,7 @@ namespace PicToMap.Models
 			var length = Pixels.Length + Width;
 			Blueprint = new int[length];
 		}
-		protected (string[] _blocks, string[] _colorsAsStrings) ReadJson()
+		private (string[] _blocks, string[] _colorsAsStrings) ReadJson()
 		{
 			var jsonContents = File.ReadAllText(Path.Combine(Settings.CurrentDirectory, "block_colors.json"));
 			var jsonDictionary = JsonSerializer.Deserialize<Dictionary<string, string[]>>(jsonContents);
@@ -42,7 +43,7 @@ namespace PicToMap.Models
 			}		
 			return (keys, values);
 		}
-		protected static Color[] ParseColors(string[] colorsAsStrings)
+		private static Color[] ParseColors(string[] colorsAsStrings)
 		{
 			var colors = new Color[colorsAsStrings.Length];
 			for (int i = 0; i < colorsAsStrings.Length; i++)
@@ -51,7 +52,7 @@ namespace PicToMap.Models
 			}
 			return colors;
 		}
-		protected (Color[] _pixels, int _width, int _height) ReadImage(string path)
+		private (Color[] _pixels, int _width, int _height) ReadImage(string path)
 		{
 			var source = new Bitmap(path);
 			var (width, height) = ScaledDimensions(source.Width, source.Height, Settings.WidthInMaps * 128, Settings.HeightInMaps * 128);
@@ -64,7 +65,7 @@ namespace PicToMap.Models
 			resizedBitmap.Dispose();
 			return (Color.FromByteArrayARGB(bgraValues), width, height);
 		}
-		protected static (int _width, int _height) ScaledDimensions(int sourceWidth, int sourceHeight, int boundariesWidth, int boundariesHeight)
+		private static (int _width, int _height) ScaledDimensions(int sourceWidth, int sourceHeight, int boundariesWidth, int boundariesHeight)
 		{
 			if ((float)sourceWidth / sourceHeight > (float)boundariesWidth / boundariesHeight)
 			{
@@ -72,7 +73,7 @@ namespace PicToMap.Models
 			}
 			return ((int)Math.Round((double)boundariesHeight * sourceWidth / sourceHeight), boundariesHeight);
 		}
-		protected static Color[] ParseMapColors(string[] colors)
+		private static Color[] ParseMapColors(string[] colors)
 		{
 			var result = new Structures.Color[colors.Length];
 			for (var i = 0; i < colors.Length; i++)
@@ -82,9 +83,17 @@ namespace PicToMap.Models
 			return result;
 		}
 
-		protected virtual void MakeBlueprint()
+		private void MakeBlueprint()
 		{
 			var cobblestone = Array.IndexOf(Blocks, "cobblestone");
+			if (cobblestone == -1)
+            {
+				var blocks = new string[Blocks.Length + 1];
+				Blocks.CopyTo(blocks, 0);
+				blocks[^0] = "cobblestone"; 
+				Blocks = blocks;
+				cobblestone = Blocks.Length - 1;
+            }
 			for (var i = 0; i < Width; i++)
 			{
 				Blueprint[i] = cobblestone;
@@ -101,34 +110,17 @@ namespace PicToMap.Models
 					Pixels[i - Width].Fix();
 				}
 				var colorIndex = GetClosestColorIndex(Pixels[i]);
-				if (Settings.StaircaseSelected)
-				{
-					Blueprint[i] = colorIndex;
-					var offset = 0;
-					switch (colorIndex % 3)
-					{
-						case 1:
-							offset += 1;
-							break;
-						case 2:
-							offset -= 1;
-							break;
-					}
-					Heights[i] = Heights[i - Width] + offset;
-				}
-				else
-				{
-					Blueprint[i] = colorIndex;
-					if (!Settings.DitheringChecked)
-					{
-						continue;
-					}
-					DistributeError(i, Pixels[i] - Colors[colorIndex]);
-				}
+				Blueprint[i] = colorIndex;
+				if (!Settings.DitheringChecked) continue;
+				DistributeError(i, Pixels[i] - Colors[colorIndex]);
 			}
 		}
+		private void CalculateHeights()
+        {
 
-			protected void DistributeError(int index, Color error)
+        }
+
+		private void DistributeError(int index, Color error)
         {
 			var right = (index + 1) % Width != 0;
 			var leftBottom = index % Width != 0;
@@ -211,7 +203,7 @@ namespace PicToMap.Models
 			MakeBlueprint();
 			WriteDatapack();
         }
-		protected int GetClosestColorIndex(Color color)
+		private int GetClosestColorIndex(Color color)
 		{
 			var result = -1;
 			var minDistance = float.MaxValue;
