@@ -5,35 +5,45 @@ using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
+using PicToMap.ViewModels;
 
 namespace PicToMap.Models
 {
 	public class MapGenerator
 	{
-		private Settings Settings { get; }
-		private Color[] Pixels { get; }
-		private int Width { get; }
-		private int Height { get; }
+		private MainWindowViewModel Settings { get;}
+		private Assets Assets { get; }
+		private Color[] Pixels { get; set; }
+		private int Width { get; set; }
+		private int Height { get; set; }
 		private string[] Blocks { get; set; }
-		private Color[] Colors { get; }
-		private int[] Blueprint { get; }
+		private Color[] Colors { get; set; }
+		private int[] Blueprint { get; set; }
 		private int[]? Heights { get; set; }
-		public MapGenerator(Settings settings)
+		public MapGenerator(MainWindowViewModel settings, Assets assets)
 		{
 			Settings = settings;
-			(Pixels, Width, Height) = ReadImage(Settings.ImagePath);
+			Assets = assets;
+			if (Settings.ImagePath == null) throw new NullReferenceException();
+			(Width, Height) = ScaledDimensions(Assets.Source.Width, Assets.Source.Height, Settings.WidthInMaps * 128, Settings.HeightInMaps * 128);
+			Pixels = new Color[Width * Height];
+			//(Pixels, Width, Height) = ReadImage(Settings.ImagePath);
 			Height++;
-			var (blocks, colorsAsStrings) = ReadJson();
-			Blocks = blocks;
-			Colors = ParseColors(colorsAsStrings);
-			var length = Pixels.Length + Width;
-			Blueprint = new int[length];
+			//var (blocks, colorsAsStrings) = ReadJson();
+			var blockCount = Assets.BlocksAndColors.Count;
+			Blocks = new string[blockCount];
+			if (Settings.StaircaseSelected)
+            {
+				Colors = new Color[blockCount * 3];
+            }
+            else
+            {
+				Colors = new Color[blockCount];
+            }
+			Blueprint = new int[Width * Height];
 		}
-		private (string[] _blocks, string[] _colorsAsStrings) ReadJson()
+		private () Extract()
 		{
-			var jsonContents = File.ReadAllText(Path.Combine(Settings.CurrentDirectory, "block_colors.json"));
-			var jsonDictionary = JsonSerializer.Deserialize<Dictionary<string, string[]>>(jsonContents);
-			if (jsonDictionary == null) throw new FormatException();
 			var keys = new string[jsonDictionary.Count];
 			jsonDictionary.Keys.CopyTo(keys, 0);
 			string[] values;
@@ -181,7 +191,7 @@ namespace PicToMap.Models
 
 		private void WriteDatapack()
 		{
-			var tempPath = Path.Combine(Settings.CurrentDirectory, "temp");
+			var tempPath = Path.Combine(Directory.GetCurrentDirectory(), "temp");
 			if (Directory.Exists(tempPath))
 			{
 				Directory.Delete(tempPath, true);
@@ -227,7 +237,7 @@ namespace PicToMap.Models
 			}
 			File.WriteAllLines(Path.Combine(functionsPath, "draw.mcfunction"), commands);
 			commands.Clear();
-
+			if (Settings.DestinationDirectory == null) throw new NullReferenceException();
 			var zipFile = Path.Combine(Settings.DestinationDirectory, $"{Settings.Name}.zip");
 			if (File.Exists(zipFile)) File.Delete(zipFile);
 			ZipFile.CreateFromDirectory(tempPath, zipFile);

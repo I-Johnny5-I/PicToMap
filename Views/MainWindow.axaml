@@ -50,8 +50,7 @@
 						<Label Classes="CenteredContent" Content="Datapack Name:"/>
 						<TextBox Grid.Column="1" 
 								 HorizontalAlignment="Stretch"
-								 Text="map"
-								 Name="NameBox"/>						
+								 Text="{Binding Name}"/>						
 					</Grid>
 					<StackPanel Orientation="Horizontal">
 						<Label Content="Status:"/>
@@ -76,13 +75,13 @@
 									   Content="Z"
 									   Grid.Row="2"/>
 								<NumericUpDown Grid.Column="1"
-											   Value="{Binding Settings.X}"/>
+											   Value="{Binding X}"/>
 								<NumericUpDown Grid.Column="1"
 											   Grid.Row="1"
-											   Value="{Binding Settings.Y}"/>
+											   Value="{Binding Y}"/>
 								<NumericUpDown Grid.Column="1"
 											   Grid.Row="2"
-											   Value="{Binding Settings.Z}"/>
+											   Value="{Binding Z}"/>
 							</Grid>
 						</StackPanel>
 					</Border>
@@ -101,10 +100,10 @@
 									   Classes="CenteredContent"
 									   Grid.Row="1"/>
 								<NumericUpDown Grid.Column="1"
-											   Value="{Binding Settings.WidthInMaps}"/>
+											   Value="{Binding WidthInMaps}"/>
 								<NumericUpDown Grid.Column="1"
 											   Grid.Row="1"
-											   Value="{Binding Settings.HeightInMaps}"/>
+											   Value="{Binding HeightInMaps}"/>
 							</Grid>
 						</StackPanel>
 					</Border>
@@ -119,25 +118,25 @@
 							<Label Content="Building Method:"/>
 							<StackPanel Spacing="10" Orientation="Horizontal">
 								<RadioButton Content="Staircase"
-											 IsChecked="{Binding Settings.StaircaseSelected}"/>
+											 IsChecked="{Binding StaircaseSelected}"/>
 								<RadioButton Content="Flat"/>
 								
 							</StackPanel>
 							<Label Content="Resize Method:"/>
 							<StackPanel Spacing="10" Orientation="Horizontal">
 								<RadioButton Content="High quality"
-										 IsChecked="{Binding Settings.HighQualitySelected}"/>
+										 IsChecked="{Binding HighQualitySelected}"/>
 								<RadioButton Content="Nearest Neightbour"/>
 							</StackPanel>
 							<CheckBox Content="Dithering"
-									  IsChecked="{Binding Settings.DitheringChecked}"/>
+									  IsChecked="{Binding DitheringChecked}"/>
 						</StackPanel>
 					</Border>
 				</StackPanel>
 			</DockPanel>
 			<Border	Background="#323232"
 					Margin="5,0,0,0">
-				<Image Name="Display"/>
+				<Image x:Name="Display"/>
 			</Border>
 		</DockPanel>
 	</Border>
