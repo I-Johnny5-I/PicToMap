@@ -13,57 +13,14 @@ namespace PicToMap.Models
 	{
 		private MainWindowViewModel Settings { get;}
 		private Assets Assets { get; }
-		private Color[] Pixels { get; set; }
-		private int Width { get; set; }
-		private int Height { get; set; }
-		private string[] Blocks { get; set; }
-		private Color[] Colors { get; set; }
-		private int[] Blueprint { get; set; }
+		private int[] Blueprint { get; }
 		private int[]? Heights { get; set; }
 		public MapGenerator(MainWindowViewModel settings, Assets assets)
 		{
 			Settings = settings;
 			Assets = assets;
 			if (Settings.ImagePath == null) throw new NullReferenceException();
-			(Width, Height) = ScaledDimensions(Assets.Source.Width, Assets.Source.Height, Settings.WidthInMaps * 128, Settings.HeightInMaps * 128);
-			Pixels = new Color[Width * Height];
-			//(Pixels, Width, Height) = ReadImage(Settings.ImagePath);
-			Height++;
-			//var (blocks, colorsAsStrings) = ReadJson();
-			var blockCount = Assets.BlocksAndColors.Count;
-			Blocks = new string[blockCount];
-			if (Settings.StaircaseSelected)
-            {
-				Colors = new Color[blockCount * 3];
-            }
-            else
-            {
-				Colors = new Color[blockCount];
-            }
-			Blueprint = new int[Width * Height];
-		}
-		private () Extract()
-		{
-			var keys = new string[jsonDictionary.Count];
-			jsonDictionary.Keys.CopyTo(keys, 0);
-			string[] values;
-			if (Settings.StaircaseSelected)
-            {
-				values = new string[keys.Length * 3];
-				for (var i = 0; i < keys.Length; i++)
-                {
-					jsonDictionary[keys[i]].CopyTo(values, i * 3);
-                }
-            }
-            else
-            {
-				values = new string[keys.Length];
-				for (var i = 0; i < values.Length; i++)
-				{
-					values[i] = jsonDictionary[keys[i]][0];
-				}
-			}
-			return (keys, values);
+			Blueprint = new int[Assets._width * Assets._height + 1];
 		}
 		private static Color[] ParseColors(string[] colorsAsStrings)
 		{
@@ -73,27 +30,6 @@ namespace PicToMap.Models
 				colors[i] = Color.Parse(colorsAsStrings[i]);
 			}
 			return colors;
-		}
-		private (Color[] _pixels, int _width, int _height) ReadImage(string path)
-		{
-			var source = new Bitmap(path);
-			var (width, height) = ScaledDimensions(source.Width, source.Height, Settings.WidthInMaps * 128, Settings.HeightInMaps * 128);
-			var resizeMethod = Settings.HighQualitySelected ?
-			BitmapUtils.ResizeMethod.HighQuality :
-			BitmapUtils.ResizeMethod.NearestNeighbour;
-			var resizedBitmap = BitmapUtils.Resize(source, width, height, resizeMethod);
-			source.Dispose();
-			var bgraValues = BitmapUtils.GetPixels(resizedBitmap, BitmapUtils.Channels.ARGB);			
-			resizedBitmap.Dispose();
-			return (Color.FromByteArrayARGB(bgraValues), width, height);
-		}
-		private static (int _width, int _height) ScaledDimensions(int sourceWidth, int sourceHeight, int boundariesWidth, int boundariesHeight)
-		{
-			if ((float)sourceWidth / sourceHeight > (float)boundariesWidth / boundariesHeight)
-			{
-				return (boundariesWidth, (int)Math.Round((double)boundariesWidth * sourceHeight / sourceWidth));
-			}
-			return ((int)Math.Round((double)boundariesHeight * sourceWidth / sourceHeight), boundariesHeight);
 		}
 
 		private void MakeBlueprint()

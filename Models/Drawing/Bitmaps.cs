@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 
 namespace PicToMap.Models.Drawing
 {
-	public class BitmapUtils
+	public class Bitmaps
 	{
 		public enum ResizeMethod { NearestNeighbour, HighQuality }
 		public enum Channels { RGB = 3, ARGB = 4 }
