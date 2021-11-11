@@ -20,15 +20,17 @@ namespace PicToMap.Models
 
         public Assets(string imagePath, bool highQualitySelected, int widthInMaps, int heightInMaps)
         {
-            var json = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory() + "ids_and_colors.json"));
-            var (ids, colors) = JsonSerializer.Deserialize<(string[], string[][])>(json);
-            _blockIds = ids;
-            _mapColors = new Color[colors.Length * 3];
-            for (var i = 0; i < colors.Length; i++)
-            {
-                colors[i].CopyTo(_mapColors, i * 3);
-            }
-
+            var json = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory() + "/assets.json"));
+            var idsAndColors = JsonSerializer.Deserialize<Dictionary<string,string[]>>(json);
+            if (idsAndColors == null) throw new NullReferenceException();
+            _blockIds = new string[idsAndColors.Count];
+            idsAndColors.Keys.CopyTo(_blockIds, 0);
+            _mapColors = new Color[_blockIds.Length * 3];
+            for (var i = 0; i < _blockIds.Length; i++)
+                for (var j = 0; j < 3; j++)
+                {
+                    _mapColors[i * 3 + j] = Color.Parse(idsAndColors[_blockIds[i]][j]);
+                }
             var source = new Bitmap(imagePath);
             (_width, _height) = ScaledDimensions(source.Width, source.Height, widthInMaps * 128, heightInMaps * 128);
             var resizeMethod = highQualitySelected ?

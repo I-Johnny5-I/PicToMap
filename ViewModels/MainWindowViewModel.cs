@@ -47,7 +47,7 @@ namespace PicToMap.ViewModels
 
         public void Generate()
         {
-            var model = new MainModel();
+            var model = new MainModel(this);
             model.Worker.RunWorkerAsync();
         }
     }

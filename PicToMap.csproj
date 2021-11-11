@@ -17,6 +17,9 @@
     <PackageReference Include="ReactiveUI.Fody" Version="16.3.10" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="assets.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="block_colors.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

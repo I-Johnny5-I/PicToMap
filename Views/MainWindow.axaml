@@ -122,7 +122,7 @@
 								<RadioButton Content="Flat"/>
 								
 							</StackPanel>
-							<Label Content="Resize Method:"/>
+							<Label Content="Resize Method:"/>						
 							<StackPanel Spacing="10" Orientation="Horizontal">
 								<RadioButton Content="High quality"
 										 IsChecked="{Binding HighQualitySelected}"/>

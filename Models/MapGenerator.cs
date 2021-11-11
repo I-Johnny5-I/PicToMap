@@ -22,16 +22,6 @@ namespace PicToMap.Models
 			if (Settings.ImagePath == null) throw new NullReferenceException();
 			Blueprint = new int[Assets._width * Assets._height];
 		}
-		private static Color[] ParseColors(string[] colorsAsStrings)
-		{
-			var colors = new Color[colorsAsStrings.Length];
-			for (int i = 0; i < colorsAsStrings.Length; i++)
-			{
-				colors[i] = Color.Parse(colorsAsStrings[i]);
-			}
-			return colors;
-		}
-
 		private void MakeBlueprint()
 		{
 			var cobblestone = Array.IndexOf(Assets._blockIds, "cobblestone");
@@ -41,7 +31,7 @@ namespace PicToMap.Models
 				Assets._blockIds.CopyTo(blocks, 0);
 				blocks[^1] = "cobblestone";
 				Assets._blockIds = blocks;
-				cobblestone = (Assets._blockIds.Length - 1) * 3;
+				cobblestone = (Assets._blockIds.Length - 1);
             }
 			for (var i = 0; i < Assets._width; i++)
 			{
@@ -59,32 +49,32 @@ namespace PicToMap.Models
 					Assets._pixels[i].Fix();
 				}
 				var colorIndex = GetClosestColorIndex(Assets._pixels[i]);
-				Blueprint[i + Assets._width] = colorIndex;
+				Blueprint[i + Assets._width] = colorIndex / 3;
 				if (!Settings.DitheringChecked) continue;
 				DistributeError(i, Assets._pixels[i] - Assets._mapColors[colorIndex]);
 			}
 		}
 		private void DistributeError(int index, Color error)
         {
-			var right = (index + 1) % Assets._width != 0;
-			var leftBottom = index % Assets._width != 0;
+			var right = (index + 1) % Assets._width != 0;			
 			var bottom = index + Assets._width < Assets._pixels.Length;
+			var leftBottom = index % Assets._width != 0 && bottom;
 			var rightBottom = right && bottom;
 			if (right)
 			{
-				Assets._pixels[index].Add(error * 0.4375f);
+				Assets._pixels[index + 1].Add(error * 0.4375f);
 			}
 			if (leftBottom)
 			{
-				Assets._pixels[index].Add(error * 0.1875f);
+				Assets._pixels[index + Assets._width - 1].Add(error * 0.1875f);
 			}
 			if (bottom)
 			{
-				Assets._pixels[index].Add(error * 0.3125f);
+				Assets._pixels[index + Assets._width].Add(error * 0.3125f);
 			}
 			if (rightBottom)
 			{
-				Assets._pixels[index].Add(error * 0.0625f);
+				Assets._pixels[index + Assets._width + 1].Add(error * 0.0625f);
 			}
 		}
 		private void CalculateHeights()
@@ -157,20 +147,18 @@ namespace PicToMap.Models
 			removeForceloadCommands.Clear();
 
 			for (var blockZ = 0; blockZ < Assets._height; blockZ++)
-			{
 				for (int blockX = 0; blockX < Assets._width; blockX++)
 				{
 					var index = Index(blockX, blockZ, Assets._width);
 					if (Settings.StaircaseSelected && Heights != null)
 					{
-						commands.Add($"setblock {Settings.X + blockX} {Heights[index] + Settings.Y} {Settings.Z + blockZ - 1} {Assets._blockIds[Blueprint[index] / 3]}");
+						commands.Add($"setblock {Settings.X + blockX} {Heights[index] + Settings.Y} {Settings.Z + blockZ - 1} {Assets._blockIds[Blueprint[index]]}");
 					}
 					else
-                    {
+					{
 						commands.Add($"setblock {Settings.X + blockX} {Settings.Y} {Settings.Z + blockZ - 1} {Assets._blockIds[Blueprint[index]]}");
 					}
 				}
-			}
 			File.WriteAllLines(Path.Combine(functionsPath, "draw.mcfunction"), commands);
 			commands.Clear();
 			if (Settings.DestinationDirectory == null) throw new NullReferenceException();

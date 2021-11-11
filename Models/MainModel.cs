@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using PicToMap.ViewModels;
+using Avalonia.Media;
 
 namespace PicToMap.Models
 {
@@ -13,22 +14,25 @@ namespace PicToMap.Models
         public MainWindowViewModel _viewModel;
         public BackgroundWorker Worker { get; set; }
 
-        public MainModel()
+        public MainModel(MainWindowViewModel viewModel)
         {
+            _viewModel = viewModel;
             Worker = new BackgroundWorker();
             Worker.DoWork += Worker_DoWork;
             Worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
         }
         private void Worker_DoWork(object? sender, DoWorkEventArgs e)
         {
-            if (e.Argument is not MainWindowViewModel viewModel) throw new ArgumentException("viewModel");
-            var assets = new Assets(viewModel.ImagePath, viewModel.HighQualitySelected, viewModel.WidthInMaps, viewModel.HeightInMaps);
-            var mapGenerator = new MapGenerator(viewModel, assets);
+            _viewModel.Status = "Generating";
+            _viewModel.StatusForeground = Brushes.Yellow;
+            var assets = new Assets(_viewModel.ImagePath, _viewModel.HighQualitySelected, _viewModel.WidthInMaps, _viewModel.HeightInMaps);
+            var mapGenerator = new MapGenerator(_viewModel, assets);
             mapGenerator.Generate();
         }
         private void Worker_RunWorkerCompleted(object? sender, RunWorkerCompletedEventArgs e)
         {
-            throw new NotImplementedException();
+            _viewModel.Status = "Done";
+            _viewModel.StatusForeground = Brushes.Lime;
         }
     }
 }
