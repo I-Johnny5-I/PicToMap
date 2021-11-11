@@ -20,7 +20,7 @@ namespace PicToMap.Models
 			Settings = settings;
 			Assets = assets;
 			if (Settings.ImagePath == null) throw new NullReferenceException();
-			Blueprint = new int[Assets._width * Assets._height + 1];
+			Blueprint = new int[Assets._width * Assets._height];
 		}
 		private static Color[] ParseColors(string[] colorsAsStrings)
 		{
@@ -34,67 +34,67 @@ namespace PicToMap.Models
 
 		private void MakeBlueprint()
 		{
-			var cobblestone = Array.IndexOf(Blocks, "cobblestone");
+			var cobblestone = Array.IndexOf(Assets._blockIds, "cobblestone");
 			if (cobblestone == -1)
             {
-				var blocks = new string[Blocks.Length + 1];
-				Blocks.CopyTo(blocks, 0);
-				blocks[^1] = "cobblestone"; 
-				Blocks = blocks;
-				cobblestone = (Blocks.Length - 1) * 3;
+				var blocks = new string[Assets._blockIds.Length + 1];
+				Assets._blockIds.CopyTo(blocks, 0);
+				blocks[^1] = "cobblestone";
+				Assets._blockIds = blocks;
+				cobblestone = (Assets._blockIds.Length - 1) * 3;
             }
-			for (var i = 0; i < Width; i++)
+			for (var i = 0; i < Assets._width; i++)
 			{
 				Blueprint[i] = cobblestone;
 			}
-			for (var i = 0; i < Pixels.Length; i++)
+			for (var i = 0; i < Assets._pixels.Length; i++)
 			{
-				if (Pixels[i].IsTranslucent)
+				if (Assets._pixels[i].IsTranslucent)
 				{
-					Blueprint[i + Width] = -1;
+					Blueprint[i + Assets._width] = -1;
 					continue;
 				}
 				if (Settings.DitheringChecked)
 				{
-					Pixels[i].Fix();
+					Assets._pixels[i].Fix();
 				}
-				var colorIndex = GetClosestColorIndex(Pixels[i]);
-				Blueprint[i + Width] = colorIndex;
+				var colorIndex = GetClosestColorIndex(Assets._pixels[i]);
+				Blueprint[i + Assets._width] = colorIndex;
 				if (!Settings.DitheringChecked) continue;
-				DistributeError(i, Pixels[i] - Colors[colorIndex]);
+				DistributeError(i, Assets._pixels[i] - Assets._mapColors[colorIndex]);
 			}
 		}
 		private void DistributeError(int index, Color error)
         {
-			var right = (index + 1) % Width != 0;
-			var leftBottom = index % Width != 0;
-			var bottom = index + Width < Pixels.Length;
+			var right = (index + 1) % Assets._width != 0;
+			var leftBottom = index % Assets._width != 0;
+			var bottom = index + Assets._width < Assets._pixels.Length;
 			var rightBottom = right && bottom;
 			if (right)
 			{
-				Pixels[index].Add(error * 0.4375f);
+				Assets._pixels[index].Add(error * 0.4375f);
 			}
 			if (leftBottom)
 			{
-				Pixels[index].Add(error * 0.1875f);
+				Assets._pixels[index].Add(error * 0.1875f);
 			}
 			if (bottom)
 			{
-				Pixels[index].Add(error * 0.3125f);
+				Assets._pixels[index].Add(error * 0.3125f);
 			}
 			if (rightBottom)
 			{
-				Pixels[index].Add(error * 0.0625f);
+				Assets._pixels[index].Add(error * 0.0625f);
 			}
 		}
 		private void CalculateHeights()
         {
 			Heights = new int[Blueprint.Length];
-			for (var i = 0; i < Width; i++)
+			for (var i = 0; i < Assets._width; i++)
             {
 				Heights[i] = 0;
             }
-			for (var i = Width; i < Heights.Length; i++)
+			for (var i = Assets._width; i < Heights.Length; i++)
             {
 				var height = 0;
 				switch (Blueprint[i] % 3)
@@ -106,19 +106,19 @@ namespace PicToMap.Models
 						height--;
 						break;
                 }
-				Heights[i] = Heights[i - Width] + height;
+				Heights[i] = Heights[i - Assets._width] + height;
             }
-			for (var x = 0; x < Width; x++)
+			for (var x = 0; x < Assets._width; x++)
             {
 				var minHeight = int.MaxValue;
-				for (var y = x; y < Heights.Length; y += Width)
+				for (var y = x; y < Heights.Length; y += Assets._width)
                 {
 					if (Heights[y] < minHeight)
                     {
 						minHeight = Heights[y];
                     }
                 }
-				for (var y = x; y < Heights.Length; y += Width)
+				for (var y = x; y < Heights.Length; y += Assets._width)
 				{
 					Heights[y] -= minHeight;
 				}
@@ -156,18 +156,18 @@ namespace PicToMap.Models
 			commands.Clear();
 			removeForceloadCommands.Clear();
 
-			for (var blockZ = 0; blockZ < Height; blockZ++)
+			for (var blockZ = 0; blockZ < Assets._height; blockZ++)
 			{
-				for (int blockX = 0; blockX < Width; blockX++)
+				for (int blockX = 0; blockX < Assets._width; blockX++)
 				{
-					var index = Index(blockX, blockZ, Width);
+					var index = Index(blockX, blockZ, Assets._width);
 					if (Settings.StaircaseSelected && Heights != null)
 					{
-						commands.Add($"setblock {Settings.X + blockX} {Heights[index] + Settings.Y} {Settings.Z + blockZ - 1} {Blocks[Blueprint[index] / 3]}");
+						commands.Add($"setblock {Settings.X + blockX} {Heights[index] + Settings.Y} {Settings.Z + blockZ - 1} {Assets._blockIds[Blueprint[index] / 3]}");
 					}
 					else
                     {
-						commands.Add($"setblock {Settings.X + blockX} {Settings.Y} {Settings.Z + blockZ - 1} {Blocks[Blueprint[index]]}");
+						commands.Add($"setblock {Settings.X + blockX} {Settings.Y} {Settings.Z + blockZ - 1} {Assets._blockIds[Blueprint[index]]}");
 					}
 				}
 			}
@@ -193,9 +193,10 @@ namespace PicToMap.Models
 		{
 			var result = -1;
 			var minDistance = double.MaxValue;
-			for (int i = 0; i < Colors.Length; i++)
+			var step = Settings.StaircaseSelected ? 1 : 3;
+			for (int i = 0; i < Assets._mapColors.Length; i += step)
 			{
-				var currentDistance = Color.Distance(color, Colors[i]);
+				var currentDistance = Color.Distance(color, Assets._mapColors[i]);
 				if (currentDistance < minDistance)
 				{
 					minDistance = currentDistance;

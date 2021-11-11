@@ -44,5 +44,11 @@ namespace PicToMap.ViewModels
             CurrentDirectory = Directory.GetCurrentDirectory();
             DestinationDirectory = CurrentDirectory;
         }
+
+        public void Generate()
+        {
+            var model = new MainModel();
+            model.Worker.RunWorkerAsync();
+        }
     }
 }

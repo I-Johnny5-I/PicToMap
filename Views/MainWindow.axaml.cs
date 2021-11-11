@@ -47,7 +47,7 @@ namespace PicToMap.Views
             if (dialogResult != null)
             {
                 viewModel.DestinationDirectory = dialogResult;
-                viewModel.Name = this.Get<TextBox>("NameBox").Text;
+                viewModel.Generate();
             }
         }
     }

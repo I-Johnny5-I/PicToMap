@@ -13,7 +13,7 @@ namespace PicToMap.Models
     public class Assets
     {
         public string[] _blockIds;
-        public Color[][] _mapColors;
+        public Color[] _mapColors;
         public Color[] _pixels;
         public int _width;
         public int _height;
@@ -23,14 +23,10 @@ namespace PicToMap.Models
             var json = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory() + "ids_and_colors.json"));
             var (ids, colors) = JsonSerializer.Deserialize<(string[], string[][])>(json);
             _blockIds = ids;
-            _mapColors = new Color[colors.Length][];
+            _mapColors = new Color[colors.Length * 3];
             for (var i = 0; i < colors.Length; i++)
             {
-                _mapColors[i] = new Color[3];
-                for (var j = 0; j < 3; j++)
-                {
-                    _mapColors[i][j] = Color.Parse(colors[i][j]);
-                }
+                colors[i].CopyTo(_mapColors, i * 3);
             }
 
             var source = new Bitmap(imagePath);
@@ -43,6 +39,7 @@ namespace PicToMap.Models
             var bgraValues = Bitmaps.GetPixels(resizedBitmap, Bitmaps.Channels.ARGB);
             resizedBitmap.Dispose();
             _pixels = Color.FromByteArrayARGB(bgraValues);
+            _height++;
 
         }
         private static (int _width, int _height) ScaledDimensions(int sourceWidth, int sourceHeight, int boundariesWidth, int boundariesHeight)

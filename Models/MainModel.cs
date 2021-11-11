@@ -8,8 +8,9 @@ using PicToMap.ViewModels;
 
 namespace PicToMap.Models
 {
-    public class MainModel 
-    {     
+    public class MainModel
+    {
+        public MainWindowViewModel _viewModel;
         public BackgroundWorker Worker { get; set; }
 
         public MainModel()
@@ -21,7 +22,7 @@ namespace PicToMap.Models
         private void Worker_DoWork(object? sender, DoWorkEventArgs e)
         {
             if (e.Argument is not MainWindowViewModel viewModel) throw new ArgumentException("viewModel");
-            var assets = new Assets(viewModel.ImagePath);
+            var assets = new Assets(viewModel.ImagePath, viewModel.HighQualitySelected, viewModel.WidthInMaps, viewModel.HeightInMaps);
             var mapGenerator = new MapGenerator(viewModel, assets);
             mapGenerator.Generate();
         }
