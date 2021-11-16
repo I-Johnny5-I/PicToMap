@@ -11,16 +11,16 @@ namespace PicToMap.Models
 {
 	public class MapGenerator
 	{
-		private MainWindowViewModel Settings { get;}
-		private Assets Assets { get; }
-		private int[] Blueprint { get; }
-		private int[]? Heights { get; set; }
+		private MainWindowViewModel Settings { get; set; }
+		private Assets Assets { get; set; }
+		private int[] Blueprint { get; set; }
+		private int[] Heights { get; set; }
 		public MapGenerator(MainWindowViewModel settings, Assets assets)
 		{
 			Settings = settings;
 			Assets = assets;
-			if (Settings.ImagePath == null) throw new NullReferenceException();
 			Blueprint = new int[Assets._width * Assets._height];
+			Heights = Array.Empty<int>();
 		}
 		private void MakeBlueprint()
 		{
@@ -30,7 +30,7 @@ namespace PicToMap.Models
 				var blocks = new string[Assets._blockIds.Length + 1];
 				Assets._blockIds.CopyTo(blocks, 0);
 				blocks[^1] = "cobblestone";
-				Assets._blockIds = blocks;
+                Assets._blockIds = blocks;
 				cobblestone = (Assets._blockIds.Length - 1);
             }
 			for (var i = 0; i < Assets._width; i++)
@@ -53,6 +53,22 @@ namespace PicToMap.Models
 				if (!Settings.DitheringChecked) continue;
 				DistributeError(i, Assets._pixels[i] - Assets._mapColors[colorIndex]);
 			}
+		}
+		private int GetClosestColorIndex(Color color)
+		{
+			var result = -1;
+			var minDistance = double.MaxValue;
+			var step = Settings.StaircaseSelected ? 1 : 3;
+			for (int i = 0; i < Assets._mapColors.Length; i += step)
+			{
+				var currentDistance = Color.Distance(color, Assets._mapColors[i]);
+				if (currentDistance < minDistance)
+				{
+					minDistance = currentDistance;
+					result = i;
+				}
+			}
+			return result;
 		}
 		private void DistributeError(int index, Color error)
         {
@@ -114,9 +130,8 @@ namespace PicToMap.Models
 				}
 			}
         }
-
 		private void WriteDatapack()
-		{
+		{			
 			var tempPath = Path.Combine(Directory.GetCurrentDirectory(), "temp");
 			if (Directory.Exists(tempPath))
 			{
@@ -145,12 +160,11 @@ namespace PicToMap.Models
 
 			commands.Clear();
 			removeForceloadCommands.Clear();
-
 			for (var blockZ = 0; blockZ < Assets._height; blockZ++)
 				for (int blockX = 0; blockX < Assets._width; blockX++)
 				{
 					var index = Index(blockX, blockZ, Assets._width);
-					if (Settings.StaircaseSelected && Heights != null)
+					if (Settings.StaircaseSelected)
 					{
 						commands.Add($"setblock {Settings.X + blockX} {Heights[index] + Settings.Y} {Settings.Z + blockZ - 1} {Assets._blockIds[Blueprint[index]]}");
 					}
@@ -167,7 +181,6 @@ namespace PicToMap.Models
 			ZipFile.CreateFromDirectory(tempPath, zipFile);
 			Directory.Delete(tempPath, true);
 		}
-
         public void Generate()
         {
 			MakeBlueprint();
@@ -177,22 +190,6 @@ namespace PicToMap.Models
             }
 			WriteDatapack();
         }
-		private int GetClosestColorIndex(Color color)
-		{
-			var result = -1;
-			var minDistance = double.MaxValue;
-			var step = Settings.StaircaseSelected ? 1 : 3;
-			for (int i = 0; i < Assets._mapColors.Length; i += step)
-			{
-				var currentDistance = Color.Distance(color, Assets._mapColors[i]);
-				if (currentDistance < minDistance)
-				{
-					minDistance = currentDistance;
-					result = i;
-				}
-			}
-			return result;
-		}
 		private static int Index(int x, int y, int width) => y * width + x;
 	}
 }

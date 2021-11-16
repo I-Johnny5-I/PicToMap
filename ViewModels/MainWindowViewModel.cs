@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Text;
 using Avalonia.Media;
 using PicToMap.Models;
 using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
+using System.IO;
 
 namespace PicToMap.ViewModels
 {
@@ -26,6 +22,7 @@ namespace PicToMap.ViewModels
         public string ImagePath { get; set; }
         public string CurrentDirectory { get; set; }
         public string DestinationDirectory { get; set; }
+        public MainModel Model { get; set; }
 
         public MainWindowViewModel()
         {
@@ -43,12 +40,7 @@ namespace PicToMap.ViewModels
             ImagePath = string.Empty;
             CurrentDirectory = Directory.GetCurrentDirectory();
             DestinationDirectory = CurrentDirectory;
-        }
-
-        public void Generate()
-        {
-            var model = new MainModel(this);
-            model.Worker.RunWorkerAsync();
+            Model = new MainModel(this);
         }
     }
 }

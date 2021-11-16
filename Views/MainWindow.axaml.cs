@@ -47,7 +47,7 @@ namespace PicToMap.Views
             if (dialogResult != null)
             {
                 viewModel.DestinationDirectory = dialogResult;
-                viewModel.Generate();
+                viewModel.Model.Worker.RunWorkerAsync();
             }
         }
     }
